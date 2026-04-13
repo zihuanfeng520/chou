@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>崩壞：星穹鐵道 限定卡池模擬器</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --container-bg: #1e1e1e;
+            --primary-color: #d4af37;
+            --primary-hover: #f1c40f;
+            --text-main: #e0e0e0;
+            --text-muted: #888888;
+            --border-color: #333333;
+            --input-bg: #2a2a2a;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 40px 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background-color: var(--container-bg);
+            border-radius: 12px;
+            padding: 30px 40px;
+            width: 100%;
+            max-width: 800px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-color);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: 30px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 15px;
+        }
+
+        label {
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            color: #b0b0b0;
+        }
+
+        input[type="number"], select {
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        input[type="number"]:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: #000;
+            border: none;
+            padding: 14px 20px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+            color: #888;
+        }
+
+        #result-area {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            display: none;
+        }
+
+        .summary-box {
+            background-color: rgba(212, 175, 55, 0.1);
+            border-left: 4px solid var(--primary-color);
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 0 6px 6px 0;
+        }
+
+        .summary-box p {
+            margin: 5px 0;
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 15px;
+            background-color: var(--input-bg);
+            margin-bottom: 8px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+
+        .result-row.target-met {
+            border-color: var(--primary-color);
+            background-color: rgba(212, 175, 55, 0.05);
+        }
+
+        .result-label {
+            font-weight: 500;
+        }
+
+        .result-value {
+            font-family: monospace;
+            font-size: 1.1rem;
+            color: var(--primary-color);
+        }
+
+        .footer-note {
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 20px;
+        }
+        
+        .loading-text {
+            text-align: center;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            margin: 20px 0;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>限定卡池模擬器</h1>
+    
+    <div class="grid">
+        <div class="form-group">
+            <label>當前星瓊數量</label>
+            <input type="number" id="jades" value="37260" min="0">
+        </div>
+        <div class="form-group">
+            <label>當前星軌專票數量</label>
+            <input type="number" id="passes" value="215" min="0">
+        </div>
+
+        <div class="form-group">
+            <label>角色池已墊抽數 (0-89)</label>
+            <input type="number" id="charPity" value="60" min="0" max="89">
+        </div>
+        <div class="form-group">
+            <label>角色池下次是否為大保底</label>
+            <select id="charGuar">
+                <option value="false">否</option>
+                <option value="true">是</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>目標限定角色數量</label>
+            <input type="number" id="targetChars" value="7" min="0">
+        </div>
+        <div class="form-group">
+            <label>目標限定光錐數量</label>
+            <input type="number" id="targetWeaps" value="1" min="0">
+        </div>
+
+        <div class="form-group">
+            <label>光錐池已墊抽數 (0-79)</label>
+            <input type="number" id="weapPity" value="5" min="0" max="79">
+        </div>
+        <div class="form-group">
+            <label>光錐池下次是否為大保底</label>
+            <select id="weapGuar">
+                <option value="false">否</option>
+                <option value="true">是</option>
+            </select>
+        </div>
+
+        <div class="form-group full-width">
+            <label>模擬次數 (建議 10000 ~ 1000000)</label>
+            <input type="number" id="simulations" value="100000" min="1000">
+        </div>
+    </div>
+
+    <button id="runBtn" onclick="startSimulation()">開始模擬</button>
+    
+    <div id="loading" class="loading-text">資料運算中，請稍候...</div>
+
+    <div id="result-area">
+        <div class="summary-box" id="summary"></div>
+        <div id="details"></div>
+        <div class="footer-note" id="footer-note"></div>
+    </div>
+</div>
+
+<script>
+    function singlePullCharacter(pity, isGuaranteed) {
+        pity++;
+        let prob = pity <= 73 ? 0.006 : 0.006 + 0.06 * (pity - 73);
+        
+        if (Math.random() < prob || pity >= 90) {
+            if (isGuaranteed || Math.random() < 0.5) {
+                return { gotUp: true, gotStd: false, newPity: 0, newGuar: false };
+            } else {
+                return { gotUp: false, gotStd: true, newPity: 0, newGuar: true };
+            }
+        }
+        return { gotUp: false, gotStd: false, newPity: pity, newGuar: isGuaranteed };
+    }
+
+    function singlePullWeapon(pity, isGuaranteed) {
+        pity++;
+        let prob = pity <= 65 ? 0.008 : 0.008 + 0.07 * (pity - 65);
+        
+        if (Math.random() < prob || pity >= 80) {
+            if (isGuaranteed || Math.random() < 0.75) {
+                return { gotUp: true, gotStd: false, newPity: 0, newGuar: false };
+            } else {
+                return { gotUp: false, gotStd: true, newPity: 0, newGuar: true };
+            }
+        }
+        return { gotUp: false, gotStd: false, newPity: pity, newGuar: isGuaranteed };
+    }
+
+    function runSingleSimulation(totalPulls, charPity, charGuar, weapPity, weapGuar, targetChars, targetWeaps) {
+        let pullsLeft = totalPulls;
+        let charsGot = 0;
+        let weapsGot = 0;
+        
+        let fourStarPity = 0;
+        let refundFragments = 0.0;
+        
+        let currentCharPity = charPity;
+        let currentCharGuar = charGuar;
+        let currentWeapPity = weapPity;
+        let currentWeapGuar = weapGuar;
+
+        while (pullsLeft > 0 && (charsGot < targetChars || weapsGot < targetWeaps)) {
+            pullsLeft--;
+            fourStarPity++;
+            
+            if (charsGot < targetChars) {
+                let res = singlePullCharacter(currentCharPity, currentCharGuar);
+                currentCharPity = res.newPity;
+                currentCharGuar = res.newGuar;
+                if (res.gotUp) charsGot++;
+                if (res.gotStd) pullsLeft += 2;
+            } else {
+                let res = singlePullWeapon(currentWeapPity, currentWeapGuar);
+                currentWeapPity = res.newPity;
+                currentWeapGuar = res.newGuar;
+                if (res.gotUp) weapsGot++;
+                if (res.gotStd) pullsLeft += 2;
+            }
+            
+            if (Math.random() < 0.051 || fourStarPity >= 10) {
+                fourStarPity = 0;
+                if (Math.random() < 0.5) {
+                    refundFragments += 0.4;
+                    if (refundFragments >= 1.0) {
+                        pullsLeft++;
+                        refundFragments -= 1.0;
+                    }
+                }
+            }
+        }
+        return { c: charsGot, w: weapsGot };
+    }
+
+    function startSimulation() {
+        const btn = document.getElementById('runBtn');
+        const loading = document.getElementById('loading');
+        const resultArea = document.getElementById('result-area');
+        
+        btn.disabled = true;
+        btn.innerText = "運算中...";
+        resultArea.style.display = 'none';
+        loading.style.display = 'block';
+
+        // 讀取輸入值
+        const jades = parseInt(document.getElementById('jades').value) || 0;
+        const passes = parseInt(document.getElementById('passes').value) || 0;
+        const charPity = parseInt(document.getElementById('charPity').value) || 0;
+        const charGuar = document.getElementById('charGuar').value === 'true';
+        const targetChars = parseInt(document.getElementById('targetChars').value) || 0;
+        const targetWeaps = parseInt(document.getElementById('targetWeaps').value) || 0;
+        const weapPity = parseInt(document.getElementById('weapPity').value) || 0;
+        const weapGuar = document.getElementById('weapGuar').value === 'true';
+        const simulations = parseInt(document.getElementById('simulations').value) || 100000;
+
+        const initialPulls = Math.floor(jades / 160) + passes;
+
+        // 使用 setTimeout 讓瀏覽器有時間更新畫面（顯示載入中），再進行阻斷式的繁重運算
+        setTimeout(() => {
+            const outcomesTally = {};
+
+            for (let i = 0; i < simulations; i++) {
+                let result = runSingleSimulation(
+                    initialPulls, charPity, charGuar, weapPity, weapGuar, targetChars, targetWeaps
+                );
+                
+                let key = `${result.c},${result.w}`;
+                if (!outcomesTally[key]) outcomesTally[key] = 0;
+                outcomesTally[key]++;
+            }
+
+            // 處理結果並顯示
+            renderResults(outcomesTally, simulations, initialPulls, targetChars, targetWeaps);
+            
+            btn.disabled = false;
+            btn.innerText = "開始模擬";
+            loading.style.display = 'none';
+            resultArea.style.display = 'block';
+        }, 50);
+    }
+
+    function renderResults(outcomes, totalSims, pulls, tC, tW) {
+        document.getElementById('summary').innerHTML = `
+            <p>初始總抽數：<strong>${pulls} 抽</strong></p>
+            <p>測試次數：<strong>${totalSims.toLocaleString()} 次</strong></p>
+            <p>目標策略：優先抽滿角色 ${tC} 隻，再抽光錐 ${tW} 把</p>
+        `;
+
+        const detailsDiv = document.getElementById('details');
+        detailsDiv.innerHTML = '';
+
+        // 排序：先比角色數量，再比光錐數量
+        const sortedKeys = Object.keys(outcomes).sort((a, b) => {
+            let [ac, aw] = a.split(',').map(Number);
+            let [bc, bw] = b.split(',').map(Number);
+            if (ac !== bc) return ac - bc;
+            return aw - bw;
+        });
+
+        let totalRate = 0;
+
+        sortedKeys.forEach(key => {
+            let [c, w] = key.split(',').map(Number);
+            let count = outcomes[key];
+            let rate = (count / totalSims) * 100;
+
+            if (rate >= 0.01) {
+                totalRate += rate;
+                let isTargetMet = (c === tC && w === tW);
+                
+                let row = document.createElement('div');
+                row.className = `result-row ${isTargetMet ? 'target-met' : ''}`;
+                
+                let labelText = isTargetMet ? `圓滿達成目標 ${c} + ${w}` : `資源抽乾，停在 ${c} + ${w}`;
+                
+                row.innerHTML = `
+                    <span class="result-label">${labelText}</span>
+                    <span class="result-value">${rate.toFixed(2)}%</span>
+                `;
+                detailsDiv.appendChild(row);
+            }
+        });
+
+        document.getElementById('footer-note').innerText = 
+            `總計顯示機率涵蓋率: ${totalRate.toFixed(2)}% (未滿 100% 為隱藏了低於 0.01% 的極端情況)`;
+    }
+</script>
+
+</body>
+</html>
