@@ -6,14 +6,14 @@
     <title>崩壞：星穹鐵道 限定卡池模擬器</title>
     <style>
         :root {
-            --bg-color: #121212;
-            --container-bg: #1e1e1e;
-            --primary-color: #d4af37;
+            --bg-color: #1a1a1a;
+            --container-bg: #222222;
+            --primary-color: #dfb241;
             --primary-hover: #f1c40f;
             --text-main: #e0e0e0;
-            --text-muted: #888888;
+            --text-muted: #999999;
             --border-color: #333333;
-            --input-bg: #2a2a2a;
+            --input-bg: #2b2b2b;
         }
 
         body {
@@ -31,11 +31,11 @@
 
         .container {
             background-color: var(--container-bg);
-            border-radius: 12px;
-            padding: 30px 40px;
+            border-radius: 8px;
+            padding: 40px 50px;
             width: 100%;
-            max-width: 800px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            max-width: 900px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
             border: 1px solid var(--border-color);
         }
 
@@ -45,59 +45,70 @@
             margin-top: 0;
             margin-bottom: 30px;
             font-weight: 600;
-            letter-spacing: 1px;
+            font-size: 1.8rem;
+            letter-spacing: 2px;
             border-bottom: 1px solid var(--border-color);
-            padding-bottom: 15px;
+            padding-bottom: 20px;
         }
 
         .grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 20px 25px;
         }
+
+        .col-2 { grid-column: span 2; }
+        .col-3 { grid-column: span 3; }
+        .col-4 { grid-column: span 4; }
+        .col-center-4 { grid-column: 2 / 6; }
 
         .form-group {
             display: flex;
             flex-direction: column;
-            margin-bottom: 15px;
         }
 
         label {
             margin-bottom: 8px;
-            font-size: 0.95rem;
-            color: #b0b0b0;
+            font-size: 0.9rem;
+            color: var(--text-muted);
         }
 
         input[type="number"], select {
             background-color: var(--input-bg);
-            border: 1px solid var(--border-color);
+            border: 1px solid transparent;
             color: var(--text-main);
-            padding: 10px 12px;
-            border-radius: 6px;
+            padding: 12px 14px;
+            border-radius: 4px;
             font-size: 1rem;
-            transition: border-color 0.2s;
+            transition: all 0.2s;
         }
 
         input[type="number"]:focus, select:focus {
             outline: none;
             border-color: var(--primary-color);
+            background-color: #333333;
         }
 
-        .full-width {
-            grid-column: 1 / -1;
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+
+        .button-group {
+            margin-top: 10px;
         }
 
         button {
             background-color: var(--primary-color);
-            color: #000;
+            color: #111;
             border: none;
             padding: 14px 20px;
             font-size: 1.1rem;
-            font-weight: 600;
-            border-radius: 6px;
+            font-weight: bold;
+            border-radius: 4px;
             cursor: pointer;
             width: 100%;
-            margin-top: 20px;
             transition: background-color 0.2s, transform 0.1s;
         }
 
@@ -116,62 +127,77 @@
         }
 
         #result-area {
-            margin-top: 30px;
-            padding-top: 20px;
+            margin-top: 40px;
+            padding-top: 25px;
             border-top: 1px solid var(--border-color);
             display: none;
         }
 
         .summary-box {
-            background-color: rgba(212, 175, 55, 0.1);
+            background-color: rgba(223, 178, 65, 0.08);
             border-left: 4px solid var(--primary-color);
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 0 6px 6px 0;
+            padding: 16px 20px;
+            margin-bottom: 25px;
+            border-radius: 0 4px 4px 0;
         }
 
         .summary-box p {
-            margin: 5px 0;
+            margin: 6px 0;
+            color: #ccc;
+        }
+
+        .summary-box strong {
+            color: var(--text-main);
         }
 
         .result-row {
             display: flex;
             justify-content: space-between;
-            padding: 10px 15px;
+            align-items: center;
+            padding: 12px 18px;
             background-color: var(--input-bg);
-            margin-bottom: 8px;
-            border-radius: 6px;
-            border: 1px solid var(--border-color);
+            margin-bottom: 10px;
+            border-radius: 4px;
+            border: 1px solid transparent;
         }
 
         .result-row.target-met {
             border-color: var(--primary-color);
-            background-color: rgba(212, 175, 55, 0.05);
+            background-color: rgba(223, 178, 65, 0.05);
         }
 
         .result-label {
             font-weight: 500;
+            color: #ddd;
         }
 
         .result-value {
             font-family: monospace;
-            font-size: 1.1rem;
+            font-size: 1.15rem;
             color: var(--primary-color);
+            font-weight: bold;
         }
 
         .footer-note {
             text-align: center;
             font-size: 0.85rem;
             color: var(--text-muted);
-            margin-top: 20px;
+            margin-top: 25px;
         }
         
         .loading-text {
             text-align: center;
             color: var(--primary-color);
-            font-size: 1.2rem;
-            margin: 20px 0;
+            font-size: 1.1rem;
+            margin: 30px 0;
             display: none;
+            letter-spacing: 1px;
+        }
+
+        @media (max-width: 768px) {
+            .col-2, .col-3, .col-4, .col-center-4 {
+                grid-column: span 6;
+            }
         }
     </style>
 </head>
@@ -181,20 +207,24 @@
     <h1>限定卡池模擬器</h1>
     
     <div class="grid">
-        <div class="form-group">
+        <div class="form-group col-3">
             <label>當前星瓊數量</label>
-            <input type="number" id="jades" value="37260" min="0">
+            <input type="number" id="jades" value="0" min="0">
         </div>
-        <div class="form-group">
+        <div class="form-group col-3">
             <label>當前星軌專票數量</label>
-            <input type="number" id="passes" value="215" min="0">
+            <input type="number" id="passes" value="0" min="0">
         </div>
 
-        <div class="form-group">
-            <label>角色池已墊抽數 (0-89)</label>
-            <input type="number" id="charPity" value="60" min="0" max="89">
+        <div class="form-group col-2">
+            <label>目標限定角色數量</label>
+            <input type="number" id="targetChars" value="1" min="0">
         </div>
-        <div class="form-group">
+        <div class="form-group col-2">
+            <label>角色池已墊抽數 (0-89)</label>
+            <input type="number" id="charPity" value="0" min="0" max="89">
+        </div>
+        <div class="form-group col-2">
             <label>角色池下次是否為大保底</label>
             <select id="charGuar">
                 <option value="false">否</option>
@@ -202,20 +232,15 @@
             </select>
         </div>
 
-        <div class="form-group">
-            <label>目標限定角色數量</label>
-            <input type="number" id="targetChars" value="7" min="0">
-        </div>
-        <div class="form-group">
+        <div class="form-group col-2">
             <label>目標限定光錐數量</label>
-            <input type="number" id="targetWeaps" value="1" min="0">
+            <input type="number" id="targetWeaps" value="0" min="0">
         </div>
-
-        <div class="form-group">
+        <div class="form-group col-2">
             <label>光錐池已墊抽數 (0-79)</label>
-            <input type="number" id="weapPity" value="5" min="0" max="79">
+            <input type="number" id="weapPity" value="0" min="0" max="79">
         </div>
-        <div class="form-group">
+        <div class="form-group col-2">
             <label>光錐池下次是否為大保底</label>
             <select id="weapGuar">
                 <option value="false">否</option>
@@ -223,13 +248,15 @@
             </select>
         </div>
 
-        <div class="form-group full-width">
+        <div class="form-group col-center-4">
             <label>模擬次數 (建議 10000 ~ 1000000)</label>
             <input type="number" id="simulations" value="100000" min="1000">
         </div>
-    </div>
 
-    <button id="runBtn" onclick="startSimulation()">開始模擬</button>
+        <div class="form-group col-center-4 button-group">
+            <button id="runBtn" onclick="startSimulation()">開始模擬</button>
+        </div>
+    </div>
     
     <div id="loading" class="loading-text">資料運算中，請稍候...</div>
 
@@ -324,7 +351,6 @@
         resultArea.style.display = 'none';
         loading.style.display = 'block';
 
-        // 讀取輸入值
         const jades = parseInt(document.getElementById('jades').value) || 0;
         const passes = parseInt(document.getElementById('passes').value) || 0;
         const charPity = parseInt(document.getElementById('charPity').value) || 0;
@@ -337,7 +363,6 @@
 
         const initialPulls = Math.floor(jades / 160) + passes;
 
-        // 使用 setTimeout 讓瀏覽器有時間更新畫面（顯示載入中），再進行阻斷式的繁重運算
         setTimeout(() => {
             const outcomesTally = {};
 
@@ -351,7 +376,6 @@
                 outcomesTally[key]++;
             }
 
-            // 處理結果並顯示
             renderResults(outcomesTally, simulations, initialPulls, targetChars, targetWeaps);
             
             btn.disabled = false;
@@ -365,13 +389,12 @@
         document.getElementById('summary').innerHTML = `
             <p>初始總抽數：<strong>${pulls} 抽</strong></p>
             <p>測試次數：<strong>${totalSims.toLocaleString()} 次</strong></p>
-            <p>目標策略：優先抽滿角色 ${tC} 隻，再抽光錐 ${tW} 把</p>
+            <p>目標策略：優先抽滿角色 <strong>${tC}</strong> 隻，再抽光錐 <strong>${tW}</strong> 把</p>
         `;
 
         const detailsDiv = document.getElementById('details');
         detailsDiv.innerHTML = '';
 
-        // 排序：先比角色數量，再比光錐數量
         const sortedKeys = Object.keys(outcomes).sort((a, b) => {
             let [ac, aw] = a.split(',').map(Number);
             let [bc, bw] = b.split(',').map(Number);
@@ -404,7 +427,7 @@
         });
 
         document.getElementById('footer-note').innerText = 
-            `總計顯示機率涵蓋率: ${totalRate.toFixed(2)}% (未滿 100% 為隱藏了低於 0.01% 的極端情況)`;
+            `總計顯示機率涵蓋率: ${totalRate.toFixed(2)}% (未滿 100% 為隱藏了極低機率的防呆設計)`;
     }
 </script>
 
