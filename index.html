@@ -334,32 +334,55 @@
             fourStarPity++;
             let gotFiveStar = false;
 
+            // 策略：先抽角色，角色滿了換抽光錐
             if (charsGot < targetChars) {
                 let res = singlePullCharacter(currentCharPity, currentCharGuar);
                 currentCharPity = res.newPity;
                 currentCharGuar = res.newGuar;
-                if (res.gotUp) { charsGot++; gotFiveStar = true; }
-                if (res.gotStd) { pullsLeft += 2; gotFiveStar = true; }
+                
+                if (res.gotUp) { 
+                    // 根據老闆的指示：第2隻(命座1)開始才會給40星芒(2抽)
+                    if (charsGot > 0) {
+                        pullsLeft += 2;
+                    }
+                    charsGot++; 
+                    gotFiveStar = true; 
+                }
+                if (res.gotStd) { 
+                    // 歪常駐預設皆為已有，給40星芒(2抽)
+                    pullsLeft += 2; 
+                    gotFiveStar = true; 
+                }
             } else {
                 let res = singlePullWeapon(currentWeapPity, currentWeapGuar);
                 currentWeapPity = res.newPity;
                 currentWeapGuar = res.newGuar;
-                if (res.gotUp) { weapsGot++; gotFiveStar = true; }
-                if (res.gotStd) { pullsLeft += 2; gotFiveStar = true; }
+                
+                if (res.gotUp) { 
+                    weapsGot++; 
+                    // 根據網上規則：五星光錐不論是否首次，一律給40星芒(2抽)
+                    pullsLeft += 2; 
+                    gotFiveStar = true; 
+                }
+                if (res.gotStd) { 
+                    pullsLeft += 2; 
+                    gotFiveStar = true; 
+                }
             }
             
+            // 四星判定 (若本抽已中五星，則無損順延)
             if (!gotFiveStar) {
                 if (Math.random() < 0.051 || fourStarPity >= 10) {
                     fourStarPity = 0;
                     if (Math.random() < 0.5) { // UP 四星
                         let idx = Math.floor(Math.random() * 3);
                         if (fullC6 || currentEidolons[idx] >= 6) {
-                            pullsLeft += 1; // 滿命回1抽
+                            pullsLeft += 1; // 滿命回1抽 (20星芒)
                         } else {
                             currentEidolons[idx]++;
-                            refundFragments += 0.4;
+                            refundFragments += 0.4; // 未滿命回0.4抽 (8星芒)
                         }
-                    } else { // 其他四星
+                    } else { // 其他四星 (光錐或常駐)
                         refundFragments += 0.4;
                     }
                     if (refundFragments >= 1.0) {
@@ -446,3 +469,4 @@
 
 </body>
 </html>
+
