@@ -266,6 +266,14 @@
         </div>
 
         <div class="form-group col-center-4">
+            <label>角色池小保底勝率 (50/50 或 56/44)</label>
+            <select id="charWinRate">
+                <option value="0.5">官方標準機制 (50% 勝率)</option>
+                <option value="0.5625">Reddit 都市傳說 (56.25% 勝率)</option>
+            </select>
+        </div>
+
+        <div class="form-group col-center-4">
             <label>模擬次數 (建議 10000 ~ 1000000)</label>
             <input type="number" id="simulations" value="100000" min="1000">
         </div>
@@ -291,11 +299,12 @@
         groups.forEach(g => g.style.display = fullC6 ? 'none' : 'flex');
     }
 
-    function singlePullCharacter(pity, isGuaranteed) {
+    function singlePullCharacter(pity, isGuaranteed, winRate) {
         pity++;
         let prob = pity <= 73 ? 0.006 : 0.006 + 0.06 * (pity - 73);
         if (Math.random() < prob || pity >= 90) {
-            if (isGuaranteed || Math.random() < 0.5) {
+            // 替換為變數 winRate 進行勝率判定
+            if (isGuaranteed || Math.random() < winRate) {
                 return { gotUp: true, gotStd: false, newPity: 0, newGuar: false };
             } else {
                 return { gotUp: false, gotStd: true, newPity: 0, newGuar: true };
@@ -317,7 +326,7 @@
         return { gotUp: false, gotStd: false, newPity: pity, newGuar: isGuaranteed };
     }
 
-    function runSingleSimulation(totalPulls, charPity, charGuar, weapPity, weapGuar, targetChars, targetWeaps, fullC6, initEidolons) {
+    function runSingleSimulation(totalPulls, charPity, charGuar, weapPity, weapGuar, targetChars, targetWeaps, fullC6, initEidolons, charWinRate) {
         let pullsLeft = totalPulls;
         let charsGot = 0;
         let weapsGot = 0;
@@ -334,22 +343,18 @@
             fourStarPity++;
             let gotFiveStar = false;
 
-            // 策略：先抽角色，角色滿了換抽光錐
             if (charsGot < targetChars) {
-                let res = singlePullCharacter(currentCharPity, currentCharGuar);
+                // 傳入動態勝率
+                let res = singlePullCharacter(currentCharPity, currentCharGuar, charWinRate);
                 currentCharPity = res.newPity;
                 currentCharGuar = res.newGuar;
                 
                 if (res.gotUp) { 
-                    // 根據老闆的指示：第2隻(命座1)開始才會給40星芒(2抽)
-                    if (charsGot > 0) {
-                        pullsLeft += 2;
-                    }
+                    if (charsGot > 0) pullsLeft += 2;
                     charsGot++; 
                     gotFiveStar = true; 
                 }
                 if (res.gotStd) { 
-                    // 歪常駐預設皆為已有，給40星芒(2抽)
                     pullsLeft += 2; 
                     gotFiveStar = true; 
                 }
@@ -360,7 +365,6 @@
                 
                 if (res.gotUp) { 
                     weapsGot++; 
-                    // 根據網上規則：五星光錐不論是否首次，一律給40星芒(2抽)
                     pullsLeft += 2; 
                     gotFiveStar = true; 
                 }
@@ -370,19 +374,18 @@
                 }
             }
             
-            // 四星判定 (若本抽已中五星，則無損順延)
             if (!gotFiveStar) {
                 if (Math.random() < 0.051 || fourStarPity >= 10) {
                     fourStarPity = 0;
-                    if (Math.random() < 0.5) { // UP 四星
+                    if (Math.random() < 0.5) { 
                         let idx = Math.floor(Math.random() * 3);
                         if (fullC6 || currentEidolons[idx] >= 6) {
-                            pullsLeft += 1; // 滿命回1抽 (20星芒)
+                            pullsLeft += 1; 
                         } else {
                             currentEidolons[idx]++;
-                            refundFragments += 0.4; // 未滿命回0.4抽 (8星芒)
+                            refundFragments += 0.4; 
                         }
-                    } else { // 其他四星 (光錐或常駐)
+                    } else { 
                         refundFragments += 0.4;
                     }
                     if (refundFragments >= 1.0) {
@@ -414,6 +417,8 @@
         const weapGuar = document.getElementById('weapGuar').value === 'true';
         const simulations = parseInt(document.getElementById('simulations').value) || 100000;
         const fullC6 = document.getElementById('fullC6').value === 'true';
+        const charWinRate = parseFloat(document.getElementById('charWinRate').value);
+        
         const initEidolons = [
             parseInt(document.getElementById('e1').value) || 0,
             parseInt(document.getElementById('e2').value) || 0,
@@ -425,7 +430,8 @@
         setTimeout(() => {
             const outcomesTally = {};
             for (let i = 0; i < simulations; i++) {
-                let res = runSingleSimulation(initialPulls, charPity, charGuar, weapPity, weapGuar, targetChars, targetWeaps, fullC6, initEidolons);
+                // 將 charWinRate 傳入核心運算函數中
+                let res = runSingleSimulation(initialPulls, charPity, charGuar, weapPity, weapGuar, targetChars, targetWeaps, fullC6, initEidolons, charWinRate);
                 let key = `${res.c},${res.w}`;
                 outcomesTally[key] = (outcomesTally[key] || 0) + 1;
             }
