@@ -265,6 +265,19 @@
             <input type="number" id="e3" value="0" min="0" max="6">
         </div>
 
+        <div class="form-group col-4">
+            <label>抽卡策略</label>
+            <select id="pullStrategy" onchange="toggleStrategyInputs()">
+                <option value="1">先抽滿目標【角色】，再抽【光錐】</option>
+                <option value="2">先抽滿目標【光錐】，再抽【角色】</option>
+                <option value="3">【角色】抽到指定數量後，先去抽【光錐】，再補滿【角色】</option>
+            </select>
+        </div>
+        <div class="form-group col-2 strategy-group" style="display:none;">
+            <label>中途切換之角色數量</label>
+            <input type="number" id="strategyBreakpoint" value="3" min="1">
+        </div>
+
         <div class="form-group col-center-4">
             <label>角色池小保底勝率 (50/50 或 56/44)</label>
             <select id="charWinRate">
@@ -299,11 +312,16 @@
         groups.forEach(g => g.style.display = fullC6 ? 'none' : 'flex');
     }
 
+    function toggleStrategyInputs() {
+        const strategy = document.getElementById('pullStrategy').value;
+        const group = document.querySelector('.strategy-group');
+        group.style.display = strategy === '3' ? 'flex' : 'none';
+    }
+
     function singlePullCharacter(pity, isGuaranteed, winRate) {
         pity++;
         let prob = pity <= 73 ? 0.006 : 0.006 + 0.06 * (pity - 73);
         if (Math.random() < prob || pity >= 90) {
-            // 替換為變數 winRate 進行勝率判定
             if (isGuaranteed || Math.random() < winRate) {
                 return { gotUp: true, gotStd: false, newPity: 0, newGuar: false };
             } else {
@@ -326,7 +344,7 @@
         return { gotUp: false, gotStd: false, newPity: pity, newGuar: isGuaranteed };
     }
 
-    function runSingleSimulation(totalPulls, charPity, charGuar, weapPity, weapGuar, targetChars, targetWeaps, fullC6, initEidolons, charWinRate) {
+    function runSingleSimulation(totalPulls, charPity, charGuar, weapPity, weapGuar, targetChars, targetWeaps, fullC6, initEidolons, charWinRate, pullStrategy, breakpoint) {
         let pullsLeft = totalPulls;
         let charsGot = 0;
         let weapsGot = 0;
@@ -339,12 +357,32 @@
         let currentEidolons = [...initEidolons];
 
         while (pullsLeft > 0 && (charsGot < targetChars || weapsGot < targetWeaps)) {
+            
+            // --- 策略導航器：決定這抽要下哪個池 ---
+            let pullChar = true;
+            if (pullStrategy === 1) {
+                // 策略 1：先滿角色，再抽光錐
+                pullChar = (charsGot < targetChars);
+            } else if (pullStrategy === 2) {
+                // 策略 2：先滿光錐，再抽角色
+                if (weapsGot < targetWeaps) pullChar = false;
+                else pullChar = true;
+            } else if (pullStrategy === 3) {
+                // 策略 3：角色抽到 breakpoint 後，先去抽光錐，再回來補角色
+                if (charsGot < breakpoint && charsGot < targetChars) {
+                    pullChar = true;
+                } else if (weapsGot < targetWeaps) {
+                    pullChar = false;
+                } else {
+                    pullChar = true;
+                }
+            }
+            
             pullsLeft--;
             fourStarPity++;
             let gotFiveStar = false;
 
-            if (charsGot < targetChars) {
-                // 傳入動態勝率
+            if (pullChar) {
                 let res = singlePullCharacter(currentCharPity, currentCharGuar, charWinRate);
                 currentCharPity = res.newPity;
                 currentCharGuar = res.newGuar;
@@ -374,6 +412,7 @@
                 }
             }
             
+            // 四星判定
             if (!gotFiveStar) {
                 if (Math.random() < 0.051 || fourStarPity >= 10) {
                     fourStarPity = 0;
@@ -419,6 +458,9 @@
         const fullC6 = document.getElementById('fullC6').value === 'true';
         const charWinRate = parseFloat(document.getElementById('charWinRate').value);
         
+        const pullStrategy = parseInt(document.getElementById('pullStrategy').value);
+        const breakpoint = parseInt(document.getElementById('strategyBreakpoint').value) || 1;
+
         const initEidolons = [
             parseInt(document.getElementById('e1').value) || 0,
             parseInt(document.getElementById('e2').value) || 0,
@@ -430,12 +472,11 @@
         setTimeout(() => {
             const outcomesTally = {};
             for (let i = 0; i < simulations; i++) {
-                // 將 charWinRate 傳入核心運算函數中
-                let res = runSingleSimulation(initialPulls, charPity, charGuar, weapPity, weapGuar, targetChars, targetWeaps, fullC6, initEidolons, charWinRate);
+                let res = runSingleSimulation(initialPulls, charPity, charGuar, weapPity, weapGuar, targetChars, targetWeaps, fullC6, initEidolons, charWinRate, pullStrategy, breakpoint);
                 let key = `${res.c},${res.w}`;
                 outcomesTally[key] = (outcomesTally[key] || 0) + 1;
             }
-            renderResults(outcomesTally, simulations, initialPulls, targetChars, targetWeaps);
+            renderResults(outcomesTally, simulations, initialPulls, targetChars, targetWeaps, pullStrategy, breakpoint);
             btn.disabled = false;
             btn.innerText = "開始模擬";
             loading.style.display = 'none';
@@ -443,11 +484,20 @@
         }, 50);
     }
 
-    function renderResults(outcomes, totalSims, pulls, tC, tW) {
+    function renderResults(outcomes, totalSims, pulls, tC, tW, pullStrategy, breakpoint) {
+        let strategyText = "";
+        if (pullStrategy === 1) {
+            strategyText = `優先抽滿角色 <strong>${tC}</strong> 隻，再抽光錐 <strong>${tW}</strong> 把`;
+        } else if (pullStrategy === 2) {
+            strategyText = `優先抽滿光錐 <strong>${tW}</strong> 把，再抽角色 <strong>${tC}</strong> 隻`;
+        } else if (pullStrategy === 3) {
+            strategyText = `角色抽到 <strong>${breakpoint}</strong> 隻後去抽光錐 <strong>${tW}</strong> 把，最後補滿角色到 <strong>${tC}</strong> 隻`;
+        }
+
         document.getElementById('summary').innerHTML = `
             <p>初始總抽數：<strong>${pulls} 抽</strong></p>
             <p>測試次數：<strong>${totalSims.toLocaleString()} 次</strong></p>
-            <p>目標策略：優先抽滿角色 <strong>${tC}</strong> 隻，再抽光錐 <strong>${tW}</strong> 把</p>
+            <p>目標策略：${strategyText}</p>
         `;
         const detailsDiv = document.getElementById('details');
         detailsDiv.innerHTML = '';
